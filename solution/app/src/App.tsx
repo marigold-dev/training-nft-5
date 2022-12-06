@@ -6,6 +6,7 @@ import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import "./App.css";
 import { NftWalletType, Storage } from "./nft.types";
 import Paperbase from "./Paperbase";
+import { nat } from "./type-aliases";
 
 export type TZIP21TokenMetadata = TokenMetadata & {
   artifactUri?: string; //A URI (as defined in the JSON Schema Specification) to the asset.
@@ -67,18 +68,15 @@ function App() {
         nftContractAddress
       );
       const storage = (await nftContrat.storage()) as Storage;
-
-      try {
-        let tokenMetadata: TZIP21TokenMetadata = (await c
-          .tzip12()
-          .getTokenMetadata(0)) as TZIP21TokenMetadata;
-        nftContratTokenMetadataMap.set(0, tokenMetadata);
-
-        setNftContratTokenMetadataMap(new Map(nftContratTokenMetadataMap)); //new Map to force refresh
-      } catch (error) {
-        console.log("error refreshing nftContratTokenMetadataMap: ");
-      }
-
+      await Promise.all(
+        storage.token_ids.map(async (token_id: nat) => {
+          let tokenMetadata: TZIP21TokenMetadata = (await c
+            .tzip12()
+            .getTokenMetadata(token_id.toNumber())) as TZIP21TokenMetadata;
+          nftContratTokenMetadataMap.set(token_id.toNumber(), tokenMetadata);
+        })
+      );
+      setNftContratTokenMetadataMap(new Map(nftContratTokenMetadataMap)); //new Map to force refresh
       setNftContrat(nftContrat);
       setStorage(storage);
     } catch (error) {

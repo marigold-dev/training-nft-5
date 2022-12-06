@@ -38,8 +38,12 @@ type Offer = {
 export default function OffersPage() {
   const [selectedTokenId, setSelectedTokenId] = React.useState<number>(0);
 
-  let [ownerOffers, setOwnerOffers] = React.useState<Offer | null>(null);
-  let [ownerBalance, setOwnerBalance] = React.useState<number>(0);
+  let [offersTokenIDMap, setOffersTokenIDMap] = React.useState<Map<nat, Offer>>(
+    new Map()
+  );
+  let [ledgerTokenIDMap, setLedgerTokenIDMap] = React.useState<Map<nat, nat>>(
+    new Map()
+  );
 
   const {
     nftContrat,
@@ -66,25 +70,30 @@ export default function OffersPage() {
   const initPage = async () => {
     if (storage) {
       console.log("context is not empty, init page now");
+      ledgerTokenIDMap = new Map();
+      offersTokenIDMap = new Map();
 
       await Promise.all(
-        storage.owners.map(async (owner) => {
-          if (owner === userAddress) {
-            const ownerBalance = await storage.ledger.get(
-              userAddress as address
-            );
-            setOwnerBalance(ownerBalance.toNumber());
-            const ownerOffers = await storage.offers.get(
-              userAddress as address
-            );
+        storage.owner_token_ids.map(async (element) => {
+          if (element[0] === userAddress) {
+            const ownerBalance = await storage.ledger.get({
+              0: userAddress as address,
+              1: element[1],
+            });
+            if (ownerBalance != BigNumber(0))
+              ledgerTokenIDMap.set(element[1], ownerBalance);
+            const ownerOffers = await storage.offers.get({
+              0: userAddress as address,
+              1: element[1],
+            });
             if (ownerOffers && ownerOffers.quantity != BigNumber(0))
-              setOwnerOffers(ownerOffers!);
+              offersTokenIDMap.set(element[1], ownerOffers);
 
             console.log(
               "found for " +
-                owner +
+                element[0] +
                 " on token_id " +
-                0 +
+                element[1] +
                 " with balance " +
                 ownerBalance
             );
@@ -93,6 +102,10 @@ export default function OffersPage() {
           }
         })
       );
+      setLedgerTokenIDMap(new Map(ledgerTokenIDMap)); //force refresh
+      setOffersTokenIDMap(new Map(offersTokenIDMap)); //force refresh
+
+      console.log("ledgerTokenIDMap", ledgerTokenIDMap);
     } else {
       console.log("context is empty, wait for parent and retry ...");
     }
@@ -116,6 +129,7 @@ export default function OffersPage() {
     try {
       const op = await nftContrat?.methods
         .sell(
+          BigNumber(token_id) as nat,
           BigNumber(quantity) as nat,
           BigNumber(price * 1000000) as nat //to mutez
         )
@@ -161,66 +175,75 @@ export default function OffersPage() {
       }}
     >
       <Paper sx={{ maxWidth: 936, margin: "auto", overflow: "hidden" }}>
-        {ownerBalance !== 0 ? (
-          <Card key={userAddress + "-0"}>
-            <CardHeader
-              avatar={
-                <Avatar sx={{ bgcolor: "purple" }} aria-label="recipe">
-                  {0}
-                </Avatar>
-              }
-              title={nftContratTokenMetadataMap.get(0)?.name}
-            />
+        {ledgerTokenIDMap && ledgerTokenIDMap.size != 0 ? (
+          Array.from(ledgerTokenIDMap.entries()).map(([token_id, balance]) => (
+            <Card key={userAddress + "-" + token_id.toString()}>
+              <CardHeader
+                avatar={
+                  <Avatar sx={{ bgcolor: "purple" }} aria-label="recipe">
+                    {token_id.toString()}
+                  </Avatar>
+                }
+                title={
+                  nftContratTokenMetadataMap.get(token_id.toNumber())?.name
+                }
+              />
 
-            <CardContent>
-              <div>{"Owned : " + ownerBalance}</div>
+              <CardContent>
+                <div>{"Owned : " + balance.toNumber()}</div>
+                {offersTokenIDMap.get(token_id) ? (
+                  <div>
+                    {"Offer : " +
+                      offersTokenIDMap.get(token_id)?.quantity +
+                      " at price " +
+                      offersTokenIDMap.get(token_id)?.price.dividedBy(1000000) +
+                      " XTZ/bottle"}
+                  </div>
+                ) : (
+                  ""
+                )}
+              </CardContent>
 
-              {ownerOffers
-                ? "Offer :" +
-                  ownerOffers?.quantity +
-                  " at price " +
-                  ownerOffers?.price.dividedBy(1000000) +
-                  " XTZ/bottle"
-                : ""}
-            </CardContent>
-
-            <CardActions disableSpacing>
-              <form
-                onSubmit={(values) => {
-                  setSelectedTokenId(0);
-                  formik.handleSubmit(values);
-                }}
-              >
-                <TextField
-                  name="quantity"
-                  label="quantity"
-                  placeholder="Enter a quantity"
-                  variant="standard"
-                  type="number"
-                  value={formik.values.quantity}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.quantity && Boolean(formik.errors.quantity)
-                  }
-                  helperText={formik.touched.quantity && formik.errors.quantity}
-                />
-                <TextField
-                  name="price"
-                  label="price/bottle (XTZ)"
-                  placeholder="Enter a price"
-                  variant="standard"
-                  type="number"
-                  value={formik.values.price}
-                  onChange={formik.handleChange}
-                  error={formik.touched.price && Boolean(formik.errors.price)}
-                  helperText={formik.touched.price && formik.errors.price}
-                />
-                <Button type="submit" aria-label="add to favorites">
-                  <SellIcon /> SELL
-                </Button>
-              </form>
-            </CardActions>
-          </Card>
+              <CardActions disableSpacing>
+                <form
+                  onSubmit={(values) => {
+                    setSelectedTokenId(token_id.toNumber());
+                    formik.handleSubmit(values);
+                  }}
+                >
+                  <TextField
+                    name="quantity"
+                    label="quantity"
+                    placeholder="Enter a quantity"
+                    variant="standard"
+                    type="number"
+                    value={formik.values.quantity}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.quantity && Boolean(formik.errors.quantity)
+                    }
+                    helperText={
+                      formik.touched.quantity && formik.errors.quantity
+                    }
+                  />
+                  <TextField
+                    name="price"
+                    label="price/bottle (XTZ)"
+                    placeholder="Enter a price"
+                    variant="standard"
+                    type="number"
+                    value={formik.values.price}
+                    onChange={formik.handleChange}
+                    error={formik.touched.price && Boolean(formik.errors.price)}
+                    helperText={formik.touched.price && formik.errors.price}
+                  />
+                  <Button type="submit" aria-label="add to favorites">
+                    <SellIcon /> SELL
+                  </Button>
+                </form>
+              </CardActions>
+            </Card>
+          ))
         ) : (
           <Fragment />
         )}

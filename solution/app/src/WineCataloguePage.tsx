@@ -19,7 +19,7 @@ import { UserContext, UserContextType } from "./App";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import { address, nat } from "./type-aliases";
 
-type OfferEntry = [address, Offer];
+type OfferEntry = [{ 0: address; 1: nat }, Offer];
 
 type Offer = {
   price: nat;
@@ -58,11 +58,13 @@ export default function WineCataloguePage() {
   const buy = async (quantity: number, selectedOfferEntry: OfferEntry) => {
     try {
       const op = await nftContrat?.methods
-        .buy(BigNumber(quantity) as nat, selectedOfferEntry[0])
+        .buy(
+          selectedOfferEntry[0][1],
+          BigNumber(quantity) as nat,
+          selectedOfferEntry[0][0]
+        )
         .send({
-          amount:
-            selectedOfferEntry[1].quantity.toNumber() *
-            selectedOfferEntry[1].price.toNumber(),
+          amount: quantity * selectedOfferEntry[1].price.toNumber(),
           mutez: true,
         });
 
@@ -108,17 +110,19 @@ export default function WineCataloguePage() {
       <Paper sx={{ maxWidth: 936, margin: "auto", overflow: "hidden" }}>
         {storage?.offers && storage?.offers.size != 0 ? (
           Array.from(storage?.offers.entries())
-            .filter(([_, offer]) => offer.quantity.isGreaterThan(0))
-            .map(([owner, offer]) => (
-              <Card key={owner.toString()}>
+            .filter(([key, offer]) => offer.quantity.isGreaterThan(0))
+            .map(([key, offer]) => (
+              <Card key={key[0] + "-" + key[1].toString()}>
                 <CardHeader
                   avatar={
                     <Avatar sx={{ bgcolor: "purple" }} aria-label="recipe">
-                      {0}
+                      {key[1].toString()}
                     </Avatar>
                   }
-                  title={nftContratTokenMetadataMap.get(0)?.name}
-                  subheader={"seller : " + owner}
+                  title={
+                    nftContratTokenMetadataMap.get(key[1].toNumber())?.name
+                  }
+                  subheader={"seller : " + key[0]}
                 />
 
                 <CardContent>
@@ -134,7 +138,7 @@ export default function WineCataloguePage() {
                 <CardActions disableSpacing>
                   <form
                     onSubmit={(values) => {
-                      setSelectedOfferEntry([owner, offer]);
+                      setSelectedOfferEntry([key, offer]);
                       formik.handleSubmit(values);
                     }}
                   >

@@ -13,7 +13,7 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { BigNumber } from "bignumber.js";
 import { useSnackbar } from "notistack";
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { TZIP21TokenMetadata, UserContext, UserContextType } from "./App";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 
@@ -26,8 +26,8 @@ export default function MintPage() {
   const {
     nftContrat,
     refreshUserContextOnPageReload,
-    storage,
     nftContratTokenMetadataMap,
+    storage,
   } = React.useContext(UserContext) as UserContextType;
   const { enqueueSnackbar } = useSnackbar();
   const [pictureUrl, setPictureUrl] = useState<string>("");
@@ -56,6 +56,14 @@ export default function MintPage() {
       mint(values);
     },
   });
+
+  useEffect(() => {
+    (async () => {
+      if (storage && storage.token_ids.length > 0) {
+        formik.setFieldValue("token_id", storage?.token_ids.length);
+      }
+    })();
+  }, [storage?.token_ids]);
 
   const mint = async (
     newTokenDefinition: TZIP21TokenMetadata & { quantity: number }
@@ -95,6 +103,7 @@ export default function MintPage() {
 
         const op = await nftContrat!.methods
           .mint(
+            new BigNumber(newTokenDefinition.token_id) as nat,
             new BigNumber(newTokenDefinition.quantity) as nat,
             char2Bytes(newTokenDefinition.name!) as bytes,
             char2Bytes(newTokenDefinition.description!) as bytes,
@@ -216,7 +225,6 @@ export default function MintPage() {
             </Button>
           </Stack>
         </form>
-
         {nftContratTokenMetadataMap.size != 0 ? (
           Array.from(nftContratTokenMetadataMap!.entries()).map(
             ([token_id, item]) => (

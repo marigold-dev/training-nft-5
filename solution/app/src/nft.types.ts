@@ -4,19 +4,31 @@ import { address, BigMap, bytes, contract, MMap, nat } from './type-aliases';
 
 export type Storage = {
     administrators: Array<address>;
-    ledger: BigMap<address, nat>;
+    ledger: BigMap<{
+        0: address;
+        1: nat;
+    }, nat>;
     metadata: BigMap<string, bytes>;
-    offers: MMap<address, {
+    offers: MMap<{
+        0: address;
+        1: nat;
+    }, {
         price: nat;
         quantity: nat;
     }>;
-    operators: BigMap<address, Array<address>>;
-    owners: Array<address>;
+    operators: BigMap<{
+        0: address;
+        1: address;
+    }, Array<nat>>;
+    owner_token_ids: Array<{
+        0: address;
+        1: nat;
+    }>;
+    token_ids: Array<nat>;
     token_metadata: BigMap<nat, {
         token_id: nat;
         token_info: MMap<string, bytes>;
     }>;
-    totalSupply: nat;
 };
 
 type Methods = {
@@ -30,18 +42,21 @@ type Methods = {
     ) => Promise<void>;
     buy: (
         _0: nat,
-        _1: address,
+        _1: nat,
+        _2: address,
     ) => Promise<void>;
     mint: (
         _0: nat,
-        _1: bytes,
+        _1: nat,
         _2: bytes,
         _3: bytes,
         _4: bytes,
+        _5: bytes,
     ) => Promise<void>;
     sell: (
         _0: nat,
         _1: nat,
+        _2: nat,
     ) => Promise<void>;
     transfer: (param: Array<{
             from_: address;
@@ -74,18 +89,21 @@ type MethodsObject = {
     }) => Promise<void>;
     buy: (params: {
         0: nat,
-        1: address,
+        1: nat,
+        2: address,
     }) => Promise<void>;
     mint: (params: {
         0: nat,
-        1: bytes,
+        1: nat,
         2: bytes,
         3: bytes,
         4: bytes,
+        5: bytes,
     }) => Promise<void>;
     sell: (params: {
         0: nat,
         1: nat,
+        2: nat,
     }) => Promise<void>;
     transfer: (param: Array<{
             from_: address;
