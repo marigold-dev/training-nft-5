@@ -1,93 +1,130 @@
-# training-nft-1
+# training-nft-4
 
-Training n°1 for NFT marketplace
+Training n°4 for NFT marketplace
 
-http://jingculturecommerce.com/wp-content/uploads/2021/03/nft-assets-1024x614.jpg
+![https://france-vins.eu/wp-content/uploads/2018/10/les-meilleures-caves-%C3%A0-vin-image.jpg](https://france-vins.eu/wp-content/uploads/2018/10/les-meilleures-caves-%C3%A0-vin-image.jpg)
 
-<PHOTO hacker wine here>
+We finish by using multi asset template.
 
-# :wine: Wine marketplace
+- you have unlimited NFT collections
+- you have unlimited quantity of items in each collection
 
-Plan of the training course :
+To resume, you are producting any quantity of wine bottles on n collections
 
-- NFT 1 : use raw FA2 single asset template to understand the basics
-- NFT 2 : improve FA2 single asset with extra features to build a marketplace
-- NFT 3 : use FA2 multi assets to enlarge wine collection
-- NFT 4 : give unique NFT item reward as for a full complete collection
+# :arrow_forward: Go forward
 
-<PHOTO final ui>
+Keep your code from previous training or get the solution [here](https://github.com/marigold-dev/training-nft-3/tree/main/solution)
 
-## What are NFTs?
+> If you clone/fork a repo, rebuild in local
 
-A non-fungible token is a unique and non-interchangeable unit of data stored on a digital ledger. NFTs can be used to represent easily-reproducible items such as photos, videos, audio, and other types of digital files as unique items, and use blockchain technology to establish a verified and public proof of ownership.
-
-## What is IPFS?
-
-The InterPlanetary File System is a protocol and peer-to-peer network for storing and sharing data in a distributed file system. IPFS uses content-addressing to uniquely identify each file in a global namespace connecting all computing devices. In this tutorial, we will be using nft.storage to store the metadata for NFTs.
-
-## Smart Contracts
-
-We will be building two contracts for the marketplace. First will be the token contract. On Tezos FA2 is the standard for Non-fungible Token contracts. We will be using the template provided by Ligo to build out the Token Contract. The template contains the basic entry points for building a Fungible or Non-fungible token including
-
-- Minting tokens
-- Transfer
-- Adding operators
-
-# :memo: Prerequisites
-
-Please install this software first on your machine or use online alternative :
-
-- [ ] [VS Code](https://code.visualstudio.com/download) : as text editor
-- [ ] [npm](https://nodejs.org/en/download/) : we will use a typescript React client app
-- [ ] [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#windows-stable) : because yet another package manager (https://www.geeksforgeeks.org/difference-between-npm-and-yarn/)
-- [ ] [taqueria](https://github.com/ecadlabs/taqueria) : Tezos Dapp project tooling
-- [ ] [taqueria VS Code extension](https://marketplace.visualstudio.com/items?itemName=ecadlabs.taqueria-vscode) : visualize your project and execute tasks
-- [ ] [ligo VS Code extension](https://marketplace.visualstudio.com/items?itemName=ligolang-publish.ligo-vscode) : for smart contract highlighting, completion, etc ..
-- [ ] [Temple wallet](https://templewallet.com/) : an easy to use Tezos wallet in your browser
+```bash
+npm i
+cd ./app
+yarn install
+cd ..
+```
 
 # :scroll: Smart contract
 
-## Taq'ify your project
+## Do breaking changes on nft template to fit with the new library
 
-```bash
-taq init
-taq install @taqueria/plugin-ligo
-taq create contract nft.jsligo
+Point to the new template changing the first import line to
+
+```jsligo
+#import "@ligo/fa/lib/fa2/asset/single_asset.mligo" "SINGLEASSET"
 ```
 
-## FA2 contract
+It means you will change the namespace from `NFT` to `SINGLEASSET` everywhere (like this you are sure to use the correct library)
 
-https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md
-https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-16/tzip-16.md
+Change the storage definition
 
-HACK : create a dummy esy.json with `{}` content on it
+```jsligo
 
-CODE
+```
+
+Compile again and deploy to ghostnet
 
 ```bash
-ligo install @ligo/fa
-
 TAQ_LIGO_IMAGE=ligolang/ligo:0.56.0 taq compile nft.jsligo
-```
-
-DEPLOY
-
-```bash
-taq install @taqueria/plugin-taquito
 taq deploy nft.tz -e "testing"
 ```
 
-# :construction_worker: Marketplace front
+```logs
+┌──────────┬──────────────────────────────────────┬───────┬──────────────────┬────────────────────────────────┐
+│ Contract │ Address                              │ Alias │ Balance In Mutez │ Destination                    │
+├──────────┼──────────────────────────────────────┼───────┼──────────────────┼────────────────────────────────┤
+│ nft.tz   │ KT1QyJW133XNM5xyMixG1LRk17ComsrdNnsA │ nft   │ 0                │ https://ghostnet.ecadinfra.com │
+└──────────┴──────────────────────────────────────┴───────┴──────────────────┴────────────────────────────────┘
+```
+
+:tada: Hooray ! We have finished the backend :tada:
+
+# :performing_arts: NFT Marketplace front
+
+Generate Typescript classes and go to the frontend to run the server
 
 ```bash
-yarn create react-app app --template typescript
-taq install @taqueria/plugin-contract-types
 taq generate types ./app/src
-cd app
-yarn add @taquito/taquito @taquito/beacon-wallet @airgap/beacon-sdk
-yarn add -D @airgap/beacon-types
-yarn add @dipdup/tzkt-api
-yarn add --dev react-app-rewired process crypto-browserify stream-browserify assert stream-http https-browserify os-browserify url path-browserify
-
+cd ./app
+yarn install
 yarn run start
 ```
+
+## Update in `App.tsx`
+
+We just need to fetch the token_id == 0.
+Replace the function `refreshUserContextOnPageReload` by
+
+```typescript
+
+```
+
+## Let's play
+
+1. Connect with your wallet an choose `alice` account (or one of the administrators you set on the smart contract earlier). You are redirected to the Administration /mint page as there is no nft minted yet
+2. Enter these values on the form for example :
+
+- name : Saint Emilion - Franc la Rose
+- symbol : SEMIL
+- description : Grand cru 2007
+- quantity : 1000
+
+3. Click on `Upload an image` an select a bottle picture on your computer
+4. Click on Mint button
+
+Your picture will be pushed to IPFS and will display, then you are asked to sign the mint operation
+
+- Confirm operation
+- Wait less than 1 minutes until you get the confirmation notification, the page will refresh automatically
+
+Now you can see the `Trading` menu and the `Bottle offers` sub menu
+
+Click on the sub-menu entry
+
+You are owner of this bottle so you can make an offer on it
+
+- Enter a quantity
+- Enter a price offer
+- Click on `SELL` button
+- Wait a bit for the confirmation, then it refreshes and you have an offer attached to your NFT
+
+For buying,
+
+- Disconnect from your user and connect with another account (who has enough XTZ to buy at least 1 bottle)
+- The logged buyer can see that alice is selling some bottles from the unique collection
+- Buy some bottles while clicking on `BUY` button
+- Wait for the confirmation, then the offer is updated on the market (depending how many bottle you bought)
+- Click on `bottle offers` sub menu
+- You are now the owner of some bottles, you can resell a part of it at your own price, etc ...
+
+For adding more collections, go to the Mint page and repeat the process
+
+# :palm_tree: Conclusion :sun_with_face:
+
+You are able to play with an any NFT template from the ligo library.
+
+Congratulations !
+
+//TODO FA2.1 ???
+
+//TODO pictures to include everywhere
